@@ -295,3 +295,71 @@ def test_admin_lists_search_and_paginate(backend):
     html = admin.get("/admin/records?status=active&q=physics").text
     assert "Physics" in html and "Chemistry" not in html
     assert "Greenfield Secondary School" in admin.get("/admin/records").text
+
+
+# ------------------------------------------------------------------------------------------ bulk issuing
+
+
+def test_bulk_issue_flows(backend):
+    app, _ = backend
+    admin = make_admin(app)
+    school_a = make_school(app, "schoola@test.org", "School Alpha")
+    school_b = make_school(app, "schoolb@test.org", "School Beta")
+    unapproved = make_school(app, "unapproved@test.org", "School Unapproved")
+
+    approve(admin, "schoola@test.org")
+    approve(admin, "schoolb@test.org")
+
+    # Template download
+    tpl = school_a.get("/issue/bulk/template")
+    assert tpl.status_code == 200 and "student_name,course,grade,issued_on" in tpl.text
+
+    # 1. Unapproved school refused
+    assert unapproved.get("/issue/bulk").status_code == 403
+
+    # 2. Oversized file rejected (> 200 KB)
+    big_csv = "student_name,course,grade,issued_on\n" + ("John Doe,CS,A,2026-01-01\n" * 10000)
+    token_a = csrf(school_a)
+    res_big = school_a.post("/issue/bulk", data={"csrf_token": token_a}, files={"file": ("big.csv", big_csv, "text/csv")})
+    assert res_big.status_code == 400 and "File too large" in res_big.text
+
+    # 3. Batch with one bad row issues NOTHING
+    bad_csv = (
+        "student_name,course,grade,issued_on\n"
+        "Alice Smith,Mathematics,A,2026-05-10\n"
+        "Bob Johnson,Physics,,2026-05-10\n"  # missing grade
+    )
+    token_a = csrf(school_a)
+    res_bad = school_a.post("/issue/bulk", data={"csrf_token": token_a}, files={"file": ("bad.csv", bad_csv, "text/csv")})
+    assert res_bad.status_code == 400
+    assert "Row 2" in res_bad.text and "Grade or result is required." in res_bad.text
+    # Check that Alice Smith was NOT issued
+    assert "Alice Smith" not in school_a.get("/dashboard").text
+
+    # 4. Successful batch issue
+    good_csv = (
+        "\ufeffstudent_name,course,grade,issued_on\n"  # test UTF-8 BOM
+        "Alice Smith,Mathematics,A,2026-05-10\n"
+        "Charlie Brown,History,B,2026-05-12\n"
+    )
+    token_a = csrf(school_a)
+    res_good = school_a.post("/issue/bulk", data={"csrf_token": token_a}, files={"file": ("good.csv", good_csv, "text/csv")})
+    assert res_good.status_code == 200
+    assert "Bulk issue complete" in res_good.text
+    assert "Alice Smith" in res_good.text and "Charlie Brown" in res_good.text
+
+    # Audit log check
+    audit = admin.get("/admin/audit").text
+    assert "record.bulk_issue" in audit
+
+    # 5. Verify record from batch
+    dash = school_a.get("/dashboard").text
+    code_match = CODE_RE.search(dash)
+    assert code_match is not None
+    code = code_match.group(0)
+    public = TestClient(app)
+    v = public.get(f"/verify/{code}")
+    assert v.status_code == 200 and "This record is unaltered." in v.text
+
+    # 6. School isolation: School B cannot see School A's bulk issue results/records
+    assert "Alice Smith" not in school_b.get("/dashboard").text
