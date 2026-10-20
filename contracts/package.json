@@ -1,0 +1,8 @@
+{
+  "name": "truemark-contracts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TrueMarkRegistry contract compiler (outputs TrueMarkRegistry.json used by the Python app)",
+  "scripts": { "compile": "node compile.js" },
+  "devDependencies": { "solc": "0.8.28" }
+}

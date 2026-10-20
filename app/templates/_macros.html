@@ -1,0 +1,28 @@
+{% macro status_chip(status) %}
+  {%- if status == 'active' %}<span class="chip chip--ok">Active</span>
+  {%- elif status == 'revoked' %}<span class="chip chip--warn">Revoked</span>
+  {%- elif status == 'failed' %}<span class="chip chip--bad">Anchoring failed</span>
+  {%- elif status == 'pending' %}<span class="chip">Pending</span>
+  {%- elif status == 'approved' %}<span class="chip chip--ok">Approved</span>
+  {%- elif status == 'suspended' %}<span class="chip chip--bad">Suspended</span>
+  {%- else %}<span class="chip">{{ status }}</span>{% endif -%}
+{% endmacro %}
+
+{% macro pager(page, pages, base) %}
+  {% if pages > 1 %}
+  <nav class="pager" aria-label="Pages">
+    {% if page > 1 %}<a href="{{ base }}{{ '&' if '?' in base else '?' }}page={{ page - 1 }}">Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ pages }}</span>
+    {% if page < pages %}<a href="{{ base }}{{ '&' if '?' in base else '?' }}page={{ page + 1 }}">Next</a>{% endif %}
+  </nav>
+  {% endif %}
+{% endmacro %}
+
+{% macro stamp(state, small=False, animate=True) %}
+  {%- if state == 'valid' %}<div class="stamp {{ 'stamp--small' if small }} {{ 'press' if animate }}" role="img" aria-label="Valid, unaltered"><div><b>Valid</b><span>Unaltered</span></div></div>
+  {%- elif state in ('altered', 'invalid') %}<div class="stamp stamp--altered {{ 'stamp--small' if small }} {{ 'press' if animate }}" role="img" aria-label="Invalid, altered"><div><b>Invalid</b><span>Altered</span></div></div>
+  {%- elif state == 'revoked' %}<div class="stamp stamp--revoked {{ 'stamp--small' if small }} {{ 'press' if animate }}" role="img" aria-label="Revoked"><div><b>Revoked</b><span>By issuer</span></div></div>
+  {%- elif state == 'not_found' %}<div class="stamp stamp--neutral {{ 'stamp--small' if small }}" role="img" aria-label="Not found"><div><b>Not found</b><span>No such ID</span></div></div>
+  {%- else %}<div class="stamp stamp--neutral {{ 'stamp--small' if small }}" role="img" aria-label="Unconfirmed"><div><b>Unconfirmed</b><span>Not checked</span></div></div>
+  {%- endif -%}
+{% endmacro %}

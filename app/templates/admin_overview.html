@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Admin, TrueMark{% endblock %}
+
+{% block content %}
+<div class="wrap page">
+  <div class="page-head"><div><h1>Admin</h1><p>Approve schools, watch the ledger, review activity.</p></div></div>
+  {% include "_admin_nav.html" %}
+
+  {% if problems %}
+    <div class="notice notice--bad" style="margin-bottom:24px">
+      <strong>Setup needs attention</strong>
+      <ul style="margin:6px 0 0;padding-left:1.1em">{% for p in problems %}<li>{{ p }}</li>{% endfor %}</ul>
+    </div>
+  {% endif %}
+
+  <dl class="figures">
+    <div><dt>Schools and users</dt><dd>{{ stats.users }}</dd></div>
+    <div><dt>Waiting for approval</dt><dd>{{ stats.pending_users }}</dd></div>
+    <div><dt>Records issued</dt><dd>{{ stats.records }}</dd></div>
+    <div><dt>Revoked</dt><dd>{{ stats.revoked }}</dd></div>
+    <div><dt>Not anchored</dt><dd>{{ stats.failed }}</dd></div>
+  </dl>
+
+  <section aria-labelledby="queue">
+    <h2 id="queue" style="margin-bottom:14px">Waiting for approval</h2>
+    {% if pending %}
+    <p class="muted measure small">Approve a school only after you've confirmed it is who it says it is. Every record it issues carries the institution name below.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Institution</th><th>Contact</th><th>Email</th><th>Registered</th><th></th></tr></thead>
+        <tbody>
+        {% for p in pending %}
+          <tr>
+            <td><strong>{{ p.institution_name }}</strong></td>
+            <td>{{ p.full_name }}</td>
+            <td>{{ p.email }}</td>
+            <td>{{ p.created_at|fdate }}</td>
+            <td>
+              <div class="btn-row">
+                {% for action, label, cls in (('approved', 'Approve', ''), ('suspended', 'Reject', ' btn--danger')) %}
+                <form class="inline-form" method="post" action="/admin/users/{{ p.id }}/status">
+                  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+                  <input type="hidden" name="status" value="{{ action }}">
+                  <input type="hidden" name="back" value="/admin">
+                  <button class="btn btn--small{{ cls }}" type="submit">{{ label }}</button>
+                </form>
+                {% endfor %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="empty"><h3>Nobody is waiting</h3><p class="muted">New school registrations appear here for review.</p></div>
+    {% endif %}
+  </section>
+
+  <div class="cols section">
+    <section aria-labelledby="sys">
+      <h2 id="sys" style="margin-bottom:14px">System</h2>
+      <div class="proof">
+        <dl class="details">
+          <dt>Database</dt><dd>{{ 'Supabase' if storage == 'supabase' else 'Temporary memory (data is lost on restart)' }}</dd>
+          <dt>Ledger</dt><dd>{{ chain_status.name }}{% if chain_status.simulated %} (simulation){% endif %}</dd>
+          <dt>Connection</dt><dd>{% if chain_status.connected %}<span class="chip chip--ok">Connected</span>{% else %}<span class="chip chip--bad">Not connected</span>{% endif %}</dd>
+          {% if not chain_status.simulated %}
+            <dt>Wallet</dt><dd class="mono">{{ chain_status.wallet }}</dd>
+            <dt>Wallet balance</dt><dd>{% if chain_status.balance is defined %}{{ '%.4f'|format(chain_status.balance) }}{% if chain_status.balance < 0.01 %} <span class="chip chip--warn">Low: top up from a faucet</span>{% endif %}{% else %}Unknown{% endif %}</dd>
+            <dt>Contract</dt><dd class="mono">{{ chain_status.contract }}</dd>
+            <dt>Allowed to write</dt><dd>{% if chain_status.is_operator %}Yes{% else %}<span class="chip chip--bad">No: add this wallet as an operator</span>{% endif %}</dd>
+            {% if chain_status.block %}<dt>Latest block</dt><dd>{{ chain_status.block }}</dd>{% endif %}
+            {% if chain_status.error %}<dt>Error</dt><dd>{{ chain_status.error }}</dd>{% endif %}
+          {% endif %}
+        </dl>
+      </div>
+    </section>
+    <section aria-labelledby="recent">
+      <h2 id="recent" style="margin-bottom:14px">Recent activity</h2>
+      {% if recent %}
+      <div class="table-scroll"><table>
+        <tbody>{% for a in recent %}
+          <tr><td><strong>{{ a.action }}</strong><br><span class="small muted">{{ a.actor_email }}</span></td><td class="small muted">{{ a.created_at|fdt }}</td></tr>
+        {% endfor %}</tbody>
+      </table></div>
+      <p class="small" style="margin-top:10px"><a href="/admin/audit">See the full audit log</a></p>
+      {% else %}
+        <div class="empty"><p class="muted">Activity will appear here.</p></div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

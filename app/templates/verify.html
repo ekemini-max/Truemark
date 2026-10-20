@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% from "_macros.html" import stamp %}
+{% set state = result.state %}
+{% block title %}{% if state == 'valid' %}Verified record {{ code }}{% elif state == 'altered' %}Altered record {{ code }}{% elif state == 'revoked' %}Revoked record {{ code }}{% else %}Record {{ code }}{% endif %}, TrueMark{% endblock %}
+
+{% block content %}
+<div class="wrap">
+  <section class="verdict" aria-labelledby="verdict-title">
+    {{ stamp(state) }}
+    <div>
+      <p class="code">{{ code }}</p>
+      {% if state == 'valid' %}
+        <h1 id="verdict-title">This record is unaltered.</h1>
+        <p class="lede">Its fingerprint matches the proof {{ record.institution_name }} anchored on {{ record.anchored_at|fdt }}.</p>
+      {% elif state == 'revoked' %}
+        <h1 id="verdict-title">This record was revoked.</h1>
+        <p class="lede">The issuing school withdrew it{% if record.revoked_at %} on {{ record.revoked_at|fdate }}{% endif %}. Treat any copy as no longer valid.</p>
+      {% elif state == 'altered' %}
+        <h1 id="verdict-title">This record has been altered.</h1>
+        <p class="lede">The data held for this ID no longer matches the fingerprint that was anchored, so it can't be trusted.</p>
+      {% elif state == 'pending' %}
+        <h1 id="verdict-title">This record isn't anchored yet.</h1>
+        <p class="lede">The school has saved it, but its fingerprint hasn't reached the ledger. Check again in a few minutes.</p>
+      {% elif state == 'unavailable' %}
+        <h1 id="verdict-title">We couldn't check the ledger.</h1>
+        <p class="lede">{{ result.error }} Try again in a minute. This does not mean the record is invalid.</p>
+      {% else %}
+        <h1 id="verdict-title">No record has this ID.</h1>
+        <p class="lede">Check the ID printed under the QR code. IDs look like TM-2026-K7P4-9QXD.</p>
+        <form class="lookup" action="/verify" method="get" style="margin-top:18px">
+          <label><span class="sr-only">Record ID</span><input type="text" name="code" value="{{ code }}" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
+          <button class="btn" type="submit">Verify a record</button>
+        </form>
+      {% endif %}
+    </div>
+  </section>
+
+  {% if state in ('valid', 'revoked', 'altered') and ledger.simulated %}
+    <p class="notice notice--sim">This site uses a simulated ledger for demonstration. The fingerprint is held in TrueMark's own database, not on a public blockchain.</p>
+  {% endif %}
+
+  {% if record %}
+  <section class="section" aria-labelledby="details-title">
+    <h2 id="details-title">Record on file</h2>
+    <div class="proof">
+      <dl class="details">
+        <dt>Issued by</dt><dd>{{ record.institution_name }}</dd>
+        <dt>Student</dt><dd>{{ record.student_name }}</dd>
+        <dt>Course</dt><dd>{{ record.course }}</dd>
+        <dt>Grade</dt><dd>{{ record.grade }}</dd>
+        <dt>Issue date</dt><dd>{{ record.issued_on|fdate }}</dd>
+        <dt>Record ID</dt><dd class="mono">{{ record.code }}</dd>
+      </dl>
+    </div>
+    {% if state == 'valid' %}
+      <p class="notice" style="margin-top:16px">Anchoring shows this record hasn't changed since it was issued. It doesn't prove the school entered true information, or that the person presenting it is the student named here.</p>
+    {% endif %}
+  </section>
+
+  <section class="section" aria-labelledby="proof-title">
+    <h2 id="proof-title">Proof</h2>
+    <div class="proof stack" style="--gap:14px">
+      <div>
+        <p class="small muted" style="margin-bottom:6px">Fingerprint recomputed just now from the record above</p>
+        <div class="fingerprint">
+          <code>{{ result.fingerprint }}</code>
+          <button class="btn btn--quiet btn--small" type="button" data-copy="{{ result.fingerprint }}">Copy</button>
+        </div>
+      </div>
+      <dl class="details">
+        <dt>Ledger</dt><dd>{{ ledger.name }}{% if ledger.simulated %} (simulation){% endif %}</dd>
+        <dt>Anchored</dt><dd>{{ record.anchored_at|fdt }}</dd>
+        {% if tx_url %}<dt>Transaction</dt><dd><a href="{{ tx_url }}" rel="noopener noreferrer" target="_blank">View on the block explorer</a></dd>{% endif %}
+      </dl>
+    </div>
+  </section>
+
+  <section class="section" id="check" aria-labelledby="check-title">
+    <h2 id="check-title">Check the copy you were given</h2>
+    <p class="measure muted">Type exactly what is printed on the certificate. If any detail differs from what was anchored, the copy is rejected.</p>
+
+    {% if check %}
+      {% if check.state == 'valid' %}
+        <div class="check-result check-result--valid" role="status">
+          {{ stamp('valid', small=True) }}
+          <div><h3>Your copy matches the anchored record.</h3><p>Every detail you entered produces the anchored fingerprint.</p></div>
+        </div>
+      {% elif check.state == 'revoked' %}
+        <div class="check-result check-result--revoked" role="status">
+          {{ stamp('revoked', small=True) }}
+          <div><h3>Your copy matches, but the record was revoked.</h3><p>The school withdrew this record. Do not rely on it.</p></div>
+        </div>
+      {% elif check.state == 'invalid' %}
+        <div class="check-result check-result--invalid" role="status">
+          {{ stamp('invalid', small=True) }}
+          <div>
+            <h3>Your copy does not match the anchored record.</h3>
+            <p>{% if check.diffs %}{{ check.diffs|length }} detail{{ '' if check.diffs|length == 1 else 's' }} differ from what the school anchored.{% else %}It does not produce the anchored fingerprint.{% endif %}</p>
+            {% if check.diffs %}
+            <div class="table-scroll"><table class="diff">
+              <thead><tr><th>Detail</th><th>Anchored record</th><th>Your copy</th></tr></thead>
+              <tbody>{% for d in check.diffs %}
+                <tr><td>{{ d.label }}</td><td class="was">{{ d.original }}</td><td class="now">{{ d.presented or '(empty)' }}</td></tr>
+              {% endfor %}</tbody>
+            </table></div>
+            {% endif %}
+          </div>
+        </div>
+      {% else %}
+        <p class="notice notice--bad" role="status">{{ check.error or "We couldn't check this copy right now. Try again." }}</p>
+      {% endif %}
+    {% endif %}
+
+    <form class="form form--wide" method="post" action="/verify/{{ record.code }}/check#check" id="check-form"
+          data-values="{{ {'institution': record.institution_name, 'student_name': record.student_name, 'course': record.course, 'grade': record.grade, 'issued_on': record.issued_on|string}|tojson|forceescape }}">
+      <div class="two">
+        <div class="field"><label for="c-inst">Issued by</label>
+          <input id="c-inst" type="text" name="institution" value="{{ check.presented.institution if check else '' }}" autocomplete="off" required></div>
+        <div class="field"><label for="c-name">Student</label>
+          <input id="c-name" type="text" name="student_name" value="{{ check.presented.student_name if check else '' }}" autocomplete="off" required></div>
+      </div>
+      <div class="field"><label for="c-course">Course</label>
+        <input id="c-course" type="text" name="course" value="{{ check.presented.course if check else '' }}" autocomplete="off" required></div>
+      <div class="two">
+        <div class="field"><label for="c-grade">Grade</label>
+          <input id="c-grade" type="text" name="grade" value="{{ check.presented.grade if check else '' }}" autocomplete="off" required></div>
+        <div class="field"><label for="c-date">Issue date</label>
+          <input id="c-date" type="date" name="issued_on" value="{{ check.presented.issued_on if check else '' }}" required></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" type="submit">Check this copy</button>
+        <button class="btn btn--quiet" type="button" data-fill="check-form">Fill with the record on file</button>
+      </div>
+      <p class="hint small muted">The second button is for demonstrations: fill the form, change one detail, then check.</p>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

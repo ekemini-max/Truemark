@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_chip %}
+{% block title %}{{ record.code }}, TrueMark{% endblock %}
+
+{% block content %}
+<div class="wrap page">
+  <div class="page-head">
+    <div>
+      <h1>{{ record.student_name }}</h1>
+      <p><span class="mono">{{ record.code }}</span> &nbsp; {{ status_chip(record.status) }}</p>
+    </div>
+    <div class="btn-row">
+      {% if record.status in ('active', 'revoked') %}<a class="btn" href="/records/{{ record.id }}/certificate">Print certificate</a>{% endif %}
+      <a class="btn btn--quiet" href="/dashboard">All records</a>
+    </div>
+  </div>
+
+  {% if record.status == 'failed' or record.status == 'pending' %}
+    <div class="notice notice--bad" style="margin-bottom:24px">
+      <strong>This record is saved but not anchored.</strong>
+      {{ record.anchor_error or 'The fingerprint has not reached the ledger yet.' }}
+      <form class="inline-form" method="post" action="/records/{{ record.id }}/anchor" style="display:block;margin-top:10px">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <button class="btn btn--small" type="submit">Try anchoring again</button>
+      </form>
+    </div>
+  {% endif %}
+
+  <div class="cols">
+    <div>
+      <section aria-labelledby="rec">
+        <h2 id="rec" class="sr-only">Record details</h2>
+        <div class="proof">
+          <dl class="details">
+            <dt>Issued by</dt><dd>{{ record.institution_name }}</dd>
+            <dt>Student</dt><dd>{{ record.student_name }}</dd>
+            <dt>Course</dt><dd>{{ record.course }}</dd>
+            <dt>Grade</dt><dd>{{ record.grade }}</dd>
+            <dt>Issue date</dt><dd>{{ record.issued_on|fdate }}</dd>
+            <dt>Created</dt><dd>{{ record.created_at|fdt }}</dd>
+            {% if record.status == 'revoked' %}
+              <dt>Revoked</dt><dd>{{ record.revoked_at|fdt }}</dd>
+              <dt>Reason</dt><dd>{{ record.revoked_reason }}</dd>
+            {% endif %}
+          </dl>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="proof">
+        <h2 id="proof">Proof</h2>
+        <div class="proof stack" style="--gap:14px">
+          <div>
+            <p class="small muted" style="margin-bottom:6px">Fingerprint</p>
+            <div class="fingerprint"><code>{{ record.record_hash }}</code>
+              <button class="btn btn--quiet btn--small" type="button" data-copy="{{ record.record_hash }}">Copy</button></div>
+          </div>
+          <dl class="details">
+            <dt>Ledger</dt><dd>{{ record.chain_name or '(not anchored)' }}{% if ledger.simulated and record.chain_name %} (simulation){% endif %}</dd>
+            <dt>Anchored</dt><dd>{{ record.anchored_at|fdt or 'Not yet' }}</dd>
+            {% if record.tx_hash %}<dt>Transaction</dt><dd>{% if tx_url %}<a href="{{ tx_url }}" target="_blank" rel="noopener noreferrer">{{ record.tx_hash|short(10, 8) }}</a>{% else %}<span class="mono">{{ record.tx_hash|short(10, 8) }}</span>{% endif %}</dd>{% endif %}
+          </dl>
+        </div>
+      </section>
+
+      {% if record.status == 'active' %}
+      <section class="section" aria-labelledby="revoke">
+        <h2 id="revoke">Revoke this record</h2>
+        <p class="muted measure">Use this if the record was issued by mistake or the qualification was withdrawn. The public page will show it as revoked. This cannot be undone.</p>
+        <form class="form" method="post" action="/records/{{ record.id }}/revoke" data-confirm="Revoke {{ record.code }}? This cannot be undone.">
+          <input type="hidden" name="csrf_token" value="{{ csrf }}">
+          <div class="field"><label for="reason">Reason</label>
+            <textarea id="reason" name="reason" maxlength="300" required></textarea></div>
+          <div><button class="btn btn--danger" type="submit">Revoke record</button></div>
+        </form>
+      </section>
+      {% endif %}
+    </div>
+
+    <aside aria-labelledby="share">
+      <h2 id="share" style="margin-bottom:14px">Share</h2>
+      <div class="proof stack" style="--gap:14px">
+        <div style="width:176px;background:#fff;padding:6px;border:1px solid var(--rule)" role="img" aria-label="QR code that opens the public verification page">{{ qr|safe }}</div>
+        <p class="small" style="margin-bottom:0">Anyone who scans this opens the public result for <span class="mono">{{ record.code }}</span>.</p>
+        <div class="fingerprint"><code>{{ verify_url }}</code>
+          <button class="btn btn--quiet btn--small" type="button" data-copy="{{ verify_url }}">Copy</button></div>
+        <a class="small" href="/verify/{{ record.code }}" target="_blank" rel="noopener">Open the public page</a>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

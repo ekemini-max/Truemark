@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_macros.html" import pager %}
+{% block title %}Audit log, TrueMark{% endblock %}
+
+{% block content %}
+<div class="wrap page">
+  <div class="page-head"><div><h1>Audit log</h1><p>Who did what, newest first. Entries cannot be edited from the app.</p></div></div>
+  {% include "_admin_nav.html" %}
+
+  {% if rows %}
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead>
+      <tbody>
+      {% for a in rows %}
+        <tr>
+          <td class="small" style="white-space:nowrap">{{ a.created_at|fdt }}</td>
+          <td>{{ a.actor_email }}</td>
+          <td><strong>{{ a.action }}</strong></td>
+          <td class="mono">{{ a.target }}</td>
+          <td class="small muted">{{ a.detail|short(40, 12) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager(page, pages, '/admin/audit') }}
+  {% else %}
+    <div class="empty"><h3>Nothing logged yet</h3><p class="muted">Sign-ups, approvals, issuing and revoking all appear here.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

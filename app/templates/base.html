@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}TrueMark{% endblock %}</title>
+  <meta name="description" content="{% block description %}Verify a certificate or result in seconds. TrueMark anchors a fingerprint of each academic record so any edit is detectable.{% endblock %}">
+  <link rel="icon" href="{{ url_for('static', path='favicon.svg') }}" type="image/svg+xml">
+  <link rel="preload" href="{{ url_for('static', path='fonts/young-serif-latin-400-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/app.css') }}">
+  <script src="{{ url_for('static', path='js/app.js') }}" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  {% block header %}
+  <header class="site-header no-print">
+    <div class="wrap">
+      <a class="brand" href="/" aria-label="TrueMark home">{% include "_mark.html" %}TrueMark</a>
+      <nav class="nav" aria-label="Main">
+        <a href="/#verify">Verify a record</a>
+        {% if user %}
+          {% if user.status == 'approved' %}
+            <a href="/dashboard" {% if path in ('/dashboard',) or path.startswith('/records') %}aria-current="page"{% endif %}>Records</a>
+            <a href="/issue" {% if path == '/issue' %}aria-current="page"{% endif %}>Issue a record</a>
+            {% if user.role == 'admin' %}<a href="/admin" {% if path.startswith('/admin') %}aria-current="page"{% endif %}>Admin</a>{% endif %}
+          {% endif %}
+          <form method="post" action="/logout">
+            <input type="hidden" name="csrf_token" value="{{ csrf }}">
+            <button class="link-button" type="submit">Sign out</button>
+          </form>
+        {% else %}
+          <a href="/login" {% if path == '/login' %}aria-current="page"{% endif %}>Sign in</a>
+          <a class="btn btn--small" href="/signup">Register a school</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+  {% endblock %}
+
+  <main id="main">
+    {% if flash %}
+      <div class="wrap"><p class="flash flash--{{ flash.kind }}" role="status">{{ flash.text }}</p></div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block footer %}
+  <footer class="site-footer no-print">
+    <div class="wrap">
+      <p>TrueMark is a prototype. Anchoring a record makes later edits detectable; it does not prove the issuing school entered true information.</p>
+      <p>{% if ledger.simulated %}Ledger: simulated, stored in this site's database.{% else %}Ledger: {{ ledger.name }}.{% endif %}</p>
+    </div>
+  </footer>
+  {% endblock %}
+</body>
+</html>

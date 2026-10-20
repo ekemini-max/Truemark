@@ -1,0 +1,6 @@
+<nav class="subnav" aria-label="Admin">
+  <a href="/admin" {% if path == '/admin' %}aria-current="page"{% endif %}>Overview</a>
+  <a href="/admin/users" {% if path.startswith('/admin/users') %}aria-current="page"{% endif %}>Schools and users</a>
+  <a href="/admin/records" {% if path.startswith('/admin/records') %}aria-current="page"{% endif %}>All records</a>
+  <a href="/admin/audit" {% if path.startswith('/admin/audit') %}aria-current="page"{% endif %}>Audit log</a>
+</nav>

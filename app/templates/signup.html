@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Register a school, TrueMark{% endblock %}
+
+{% block content %}
+<div class="wrap page">
+  <div class="page-head">
+    <div>
+      <h1>Register a school</h1>
+      <p class="measure">Create an account for your institution. A TrueMark admin reviews every new school before it can issue records.</p>
+    </div>
+  </div>
+  {% if not signups_open %}
+    <p class="notice notice--bad">New registrations are closed. <a href="/login">Sign in</a> if you already have an account.</p>
+  {% else %}
+  <form class="form" method="post" action="/signup">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+    <div class="field">
+      <label for="institution">Institution name</label>
+      <input id="institution" type="text" name="institution_name" value="{{ form.institution_name or '' }}" maxlength="160" autocomplete="organization" required>
+      <span class="hint">Printed on every record and certificate you issue, exactly as you enter it here.</span>
+    </div>
+    <div class="field">
+      <label for="full_name">Your name</label>
+      <input id="full_name" type="text" name="full_name" value="{{ form.full_name or '' }}" maxlength="120" autocomplete="name" required>
+    </div>
+    <div class="field">
+      <label for="email">Work email</label>
+      <input id="email" type="email" name="email" value="{{ form.email or '' }}" autocomplete="username" required>
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input id="password" type="password" name="password" minlength="8" autocomplete="new-password" required>
+      <span class="hint">At least 8 characters.</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn" type="submit">Create account</button>
+      <a class="btn btn--quiet" href="/login">I already have an account</a>
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

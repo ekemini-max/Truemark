@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{% if user.status == 'suspended' %}Account suspended{% else %}Waiting for approval{% endif %}, TrueMark{% endblock %}
+
+{% block content %}
+<div class="wrap page">
+  {% if user.status == 'suspended' %}
+    <div class="page-head"><div><h1>This account is suspended</h1>
+      <p class="measure">A TrueMark admin has paused {{ user.institution_name or 'this account' }}. Records already issued stay verifiable. Contact TrueMark to restore access.</p></div></div>
+  {% else %}
+    <div class="page-head"><div><h1>Your school is waiting for approval</h1>
+      <p class="measure">A TrueMark admin checks every institution before it can issue records, because a record is only as trustworthy as the school behind it.</p></div></div>
+    <dl class="details">
+      <dt>Institution</dt><dd>{{ user.institution_name }}</dd>
+      <dt>Account</dt><dd>{{ user.email }}</dd>
+      <dt>Status</dt><dd><span class="chip">Pending review</span></dd>
+    </dl>
+    <p class="muted measure" style="margin-top:20px">Sign in again after you hear from the admin. Nothing else is needed from you.</p>
+  {% endif %}
+</div>
+{% endblock %}

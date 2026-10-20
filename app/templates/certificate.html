@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_macros.html" import stamp %}
+{% block title %}Certificate {{ record.code }}, TrueMark{% endblock %}
+
+{% block header %}
+<header class="site-header no-print">
+  <div class="wrap">
+    <a class="brand" href="/dashboard" aria-label="Back to records">{% include "_mark.html" %}TrueMark</a>
+    <nav class="nav" aria-label="Certificate">
+      <a href="/records/{{ record.id }}">Back to record</a>
+      <button class="btn btn--small" type="button" data-print>Print or save as PDF</button>
+    </nav>
+  </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="wrap">
+  <div class="cert print-cert">
+    <div class="cert__band" aria-hidden="true"></div>
+    <div class="cert__body">
+      <p class="cert__school">{{ record.institution_name }}</p>
+      <h1 class="cert__title">Certificate of achievement</h1>
+      <p class="cert__line">This certifies that</p>
+      <p class="cert__name">{{ record.student_name }}</p>
+      <p class="cert__line">completed</p>
+      <p class="cert__detail"><strong>{{ record.course }}</strong></p>
+      <p class="cert__detail">Grade: <strong>{{ record.grade }}</strong> &nbsp;&middot;&nbsp; Issued {{ record.issued_on|fdate }}</p>
+    </div>
+    <div class="cert__foot">
+      <div>
+        <p><strong>Verify this certificate</strong></p>
+        <p>Scan the code or open {{ verify_url }}</p>
+        <p class="mono">{{ record.code }}</p>
+      </div>
+      <div class="cert__qr" role="img" aria-label="QR code that opens the verification page">{{ qr|safe }}</div>
+      {{ stamp(record.status == 'revoked' and 'revoked' or 'valid', small=True, animate=False) }}
+    </div>
+    <div class="cert__band" aria-hidden="true"></div>
+  </div>
+  <p class="small muted no-print" style="text-align:center">The stamp on a printed page is decoration. Always scan the QR code to see the live result.</p>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}

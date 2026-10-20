@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_chip, pager %}
+{% block title %}Schools and users, TrueMark{% endblock %}
+
+{% block content %}
+<div class="wrap page">
+  <div class="page-head"><div><h1>Schools and users</h1><p>{{ total }} account{{ '' if total == 1 else 's' }}{% if status %} with status "{{ status }}"{% endif %}</p></div></div>
+  {% include "_admin_nav.html" %}
+
+  <nav class="subnav" aria-label="Filter by status" style="font-size:0.9rem">
+    <a href="/admin/users" {% if not status %}aria-current="page"{% endif %}>All</a>
+    <a href="/admin/users?status=pending" {% if status == 'pending' %}aria-current="page"{% endif %}>Waiting</a>
+    <a href="/admin/users?status=approved" {% if status == 'approved' %}aria-current="page"{% endif %}>Approved</a>
+    <a href="/admin/users?status=suspended" {% if status == 'suspended' %}aria-current="page"{% endif %}>Suspended</a>
+  </nav>
+
+  {% if rows %}
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Institution</th><th>Contact</th><th>Role</th><th>Status</th><th>Last sign-in</th><th></th></tr></thead>
+      <tbody>
+      {% for p in rows %}
+        <tr>
+          <td><strong>{{ p.institution_name or '(none)' }}</strong><br><span class="small muted">{{ p.email }}</span></td>
+          <td>{{ p.full_name }}</td>
+          <td>{{ 'Admin' if p.role == 'admin' else 'School' }}</td>
+          <td>{{ status_chip(p.status) }}</td>
+          <td class="small muted">{{ p.last_login_at|fdt or 'Never' }}</td>
+          <td>
+            {% if p.id != user.id %}
+            <div class="btn-row">
+              {% if p.status != 'approved' %}
+              <form class="inline-form" method="post" action="/admin/users/{{ p.id }}/status">
+                <input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="status" value="approved">
+                <button class="btn btn--small" type="submit">Approve</button></form>
+              {% endif %}
+              {% if p.status != 'suspended' %}
+              <form class="inline-form" method="post" action="/admin/users/{{ p.id }}/status" data-confirm="Suspend {{ p.institution_name or p.email }}? They will no longer be able to issue or manage records.">
+                <input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="status" value="suspended">
+                <button class="btn btn--small btn--danger" type="submit">Suspend</button></form>
+              {% endif %}
+              <form class="inline-form" method="post" action="/admin/users/{{ p.id }}/role" data-confirm="{{ 'Make ' ~ p.email ~ ' an admin? Admins can approve schools and see every record.' if p.role != 'admin' else 'Remove admin access from ' ~ p.email ~ '?' }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="role" value="{{ 'issuer' if p.role == 'admin' else 'admin' }}">
+                <button class="btn btn--small btn--quiet" type="submit">{{ 'Remove admin' if p.role == 'admin' else 'Make admin' }}</button></form>
+            </div>
+            {% else %}<span class="small muted">You</span>{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager(page, pages, '/admin/users' ~ ('?status=' ~ status if status else '')) }}
+  {% else %}
+    <div class="empty"><h3>No accounts here</h3><p class="muted">Accounts with this status will appear in this list.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_chip, pager %}
+{% block title %}All records, TrueMark{% endblock %}
+
+{% block content %}
+<div class="wrap page">
+  <div class="page-head"><div><h1>All records</h1><p>{{ total }} record{{ '' if total == 1 else 's' }} across every school</p></div></div>
+  {% include "_admin_nav.html" %}
+
+  <form class="lookup" method="get" action="/admin/records" role="search" style="max-width:720px;margin-bottom:18px">
+    <label><span class="sr-only">Search records</span>
+      <input type="search" name="q" value="{{ q }}" placeholder="Search by record ID, student, course or school" style="font-family:var(--sans);letter-spacing:0"></label>
+    <label style="flex:0 0 170px"><span class="sr-only">Status</span>
+      <select name="status">
+        <option value="">Any status</option>
+        {% for s, label in (('active', 'Active'), ('revoked', 'Revoked'), ('pending', 'Pending'), ('failed', 'Anchoring failed')) %}
+          <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select></label>
+    <button class="btn btn--quiet" type="submit">Filter</button>
+  </form>
+
+  {% if rows %}
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Record ID</th><th>School</th><th>Student</th><th>Course</th><th>Grade</th><th>Created</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td><a class="mono" href="/records/{{ r.id }}">{{ r.code }}</a></td>
+          <td>{{ r.institution_name }}</td>
+          <td>{{ r.student_name }}</td>
+          <td>{{ r.course }}</td>
+          <td>{{ r.grade }}</td>
+          <td class="small muted">{{ r.created_at|fdate }}</td>
+          <td>{{ status_chip(r.status) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager(page, pages, '/admin/records?q=' ~ (q|urlencode) ~ '&status=' ~ status) }}
+  {% else %}
+    <div class="empty"><h3>No records found</h3><p class="muted">Change the search or the status filter.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

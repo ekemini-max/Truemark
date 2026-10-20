@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}TrueMark: academic records anyone can verify{% endblock %}
+{% block head %}<script src="{{ url_for('static', path='js/demo.js') }}" defer></script>{% endblock %}
+
+{% block content %}
+<div class="wrap">
+  <section class="hero" aria-labelledby="hero-title">
+    <div>
+      <h1 id="hero-title">Real records. Lasting trust.</h1>
+      <p class="lede">Check a certificate or result in seconds. Every record gets a fingerprint anchored on a blockchain, so a changed grade or date no longer matches.</p>
+      <form class="lookup" action="/verify" method="get" id="verify">
+        <label><span class="sr-only">Record ID</span>
+          <input type="text" name="code" placeholder="TM-2026-K7P4-9QXD" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+        </label>
+        <button class="btn" type="submit">Verify a record</button>
+      </form>
+      <p class="or">Have a QR code? Scan it with your phone camera and the result opens here.</p>
+    </div>
+
+    <div data-demo>
+      <div class="cert">
+        <div class="cert__band" aria-hidden="true"></div>
+        <div class="cert__body">
+          <p class="cert__school">Greenfield Secondary School</p>
+          <h2 class="cert__title">Certificate of achievement</h2>
+          <p class="cert__line">This certifies that</p>
+          <label class="cert__field"><span class="sr-only">Student name</span>
+            <input class="name" type="text" data-demo-field="student_name" value="Amara Okafor" autocomplete="off" spellcheck="false"></label>
+          <p class="cert__line" style="margin-top:10px">completed</p>
+          <label class="cert__field"><span class="sr-only">Course</span>
+            <input type="text" data-demo-field="course" value="Mechanical Engineering" autocomplete="off" spellcheck="false"></label>
+          <div class="cert__row">
+            <label class="cert__field"><span>Grade</span>
+              <input type="text" data-demo-field="grade" value="A" autocomplete="off" spellcheck="false"></label>
+            <label class="cert__field"><span>Issued</span>
+              <input type="text" data-demo-field="issued_on" value="15 June 2026" autocomplete="off" spellcheck="false"></label>
+          </div>
+        </div>
+        <div class="cert__foot"><span>Record TM-2026-DEMO-0001</span><span>Demo record, not on a ledger</span></div>
+        <div class="stamp" data-demo-stamp role="img" aria-label="Verification result"><b>Valid</b><span>Unaltered</span></div>
+      </div>
+      <div class="demo-meta">
+        <p data-demo-status aria-live="polite">Edit the grade or the date on the certificate above.</p>
+        <dl>
+          <dt>Anchored at issue</dt><dd data-demo-anchored></dd>
+          <dt>This copy</dt><dd data-demo-now></dd>
+        </dl>
+        <button type="button" class="btn btn--quiet btn--small" data-demo-reset hidden>Restore the original</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="how">
+    <h2 id="how">How a record becomes provable</h2>
+    <ol class="sequence">
+      <li><h3>Issue</h3><p>An approved school enters a result or certificate in its workspace.</p></li>
+      <li><h3>Anchor</h3><p>TrueMark computes the record's fingerprint and writes only that fingerprint to a blockchain. Names and grades stay in the database.</p></li>
+      <li><h3>Verify</h3><p>A QR code or record ID opens a public page that recomputes the fingerprint and compares it with the anchored one.</p></li>
+    </ol>
+  </section>
+
+  <section class="section" aria-labelledby="limits">
+    <h2 id="limits">What the proof says, and what it doesn't</h2>
+    <div class="proves">
+      <div>
+        <h3>It shows</h3>
+        <ul>
+          <li>The record matches the fingerprint anchored when the school issued it.</li>
+          <li>Changing the name, course, grade or date, even by one character, breaks the match.</li>
+          <li>Whether the school has since revoked the record.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>It doesn't show</h3>
+        <ul>
+          <li>That the school entered true information. That is why only schools approved by TrueMark can issue.</li>
+          <li>That the person holding a certificate is the student named on it.</li>
+          <li>Anything about records that were never issued through TrueMark.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="who">
+    <h2 id="who">One record, many people who need to trust it</h2>
+    <dl class="audience">
+      <div><dt>Schools</dt><dd>Issue and share verifiable records.</dd></div>
+      <div><dt>Exam bodies</dt><dd>Offer an extra way to confirm results.</dd></div>
+      <div><dt>Teachers</dt><dd>Present credentials that can be checked.</dd></div>
+      <div><dt>Students</dt><dd>Carry proof of achievement across applications.</dd></div>
+      <div><dt>Employers</dt><dd>Check candidate credentials faster.</dd></div>
+      <div><dt>Universities and scholarship boards</dt><dd>Review records with a clear verification trail.</dd></div>
+    </dl>
+  </section>
+
+  <section class="section" aria-labelledby="schools">
+    <h2 id="schools">Issuing records for your school</h2>
+    <p class="measure muted">Register your institution, wait for a TrueMark admin to approve it, then issue records one at a time and print certificates with a QR code.</p>
+    <div class="btn-row">
+      <a class="btn" href="/signup">Register a school</a>
+      <a class="btn btn--quiet" href="/login">Sign in</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

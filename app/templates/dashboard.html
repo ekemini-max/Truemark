@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_chip, pager %}
+{% block title %}Records, TrueMark{% endblock %}
+
+{% block content %}
+<div class="wrap page">
+  <div class="page-head">
+    <div><h1>Records</h1><p>{{ user.institution_name }}</p></div>
+    <a class="btn" href="/issue">Issue a record</a>
+  </div>
+
+  <dl class="figures">
+    <div><dt>Issued</dt><dd>{{ stats.records }}</dd></div>
+    <div><dt>Active</dt><dd>{{ stats.active }}</dd></div>
+    <div><dt>Revoked</dt><dd>{{ stats.revoked }}</dd></div>
+    <div><dt>Need attention</dt><dd>{{ stats.failed }}</dd></div>
+  </dl>
+
+  {% if stats.failed %}
+    <p class="notice notice--bad" style="margin-bottom:20px">{{ stats.failed }} record{{ '' if stats.failed == 1 else 's' }} could not be anchored. Open the record and choose "Try anchoring again".</p>
+  {% endif %}
+
+  <form class="lookup" method="get" action="/dashboard" role="search" style="margin-bottom:18px">
+    <label><span class="sr-only">Search your records</span>
+      <input type="search" name="q" value="{{ q }}" placeholder="Search by student, course or record ID" style="font-family:var(--sans);letter-spacing:0"></label>
+    <button class="btn btn--quiet" type="submit">Search</button>
+  </form>
+
+  {% if records %}
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Record ID</th><th>Student</th><th>Course</th><th>Grade</th><th>Issued</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for r in records %}
+        <tr>
+          <td><a class="mono" href="/records/{{ r.id }}">{{ r.code }}</a></td>
+          <td>{{ r.student_name }}</td>
+          <td>{{ r.course }}</td>
+          <td>{{ r.grade }}</td>
+          <td>{{ r.issued_on|fdate }}</td>
+          <td>{{ status_chip(r.status) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pager(page, pages, '/dashboard?q=' ~ (q|urlencode)) }}
+  {% elif q %}
+    <div class="empty"><h3>No records match "{{ q }}"</h3><p class="muted">Try a student's surname or part of the record ID.</p></div>
+  {% else %}
+    <div class="empty">
+      <h3>You haven't issued any records yet</h3>
+      <p class="muted measure">Issue your first record to get a record ID, a QR code and a printable certificate.</p>
+      <a class="btn" href="/issue">Issue a record</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
