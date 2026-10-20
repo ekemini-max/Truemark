@@ -19,7 +19,7 @@ services:
       - key: SUPABASE_SECRET_KEY
         sync: false
       - key: CHAIN_MODE
-        value: evm           # change to mock to run without a blockchain
+        value: mock           # change to mock to run without a blockchain
       - key: CHAIN_NAME
         value: Polygon Amoy testnet
       - key: CHAIN_ID
