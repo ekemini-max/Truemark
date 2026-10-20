@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Bulk issue records, TrueMark{% endblock %}
+
+{% block content %}
+<div class="wrap page">
+  <div class="page-head">
+    <div>
+      <h1>Bulk issue records</h1>
+      <p class="measure">Issued by {{ institution }}. Upload a CSV file (maximum 200 rows and 200 KB) with columns: <code>student_name</code>, <code>course</code>, <code>grade</code>, <code>issued_on</code> (YYYY-MM-DD).</p>
+    </div>
+  </div>
+
+  <p class="mb-2"><a class="btn btn--quiet btn--small" href="/issue/bulk/template">Download CSV template</a></p>
+
+  {% if errors %}
+    <div class="panel form-error mb-2" role="alert">
+      <p><strong>The CSV file contains errors. No records were issued.</strong></p>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Row</th>
+            <th>Problem</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for err in errors %}
+            <tr>
+              <td>Row {{ err.row }}</td>
+              <td>{{ err.error }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  {% if results is not none %}
+    <div class="panel mb-2">
+      <h2>Bulk issue complete</h2>
+      <p>{{ results|length }} record{% if results|length != 1 %}s{% endif %} processed for {{ institution }}.</p>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Record ID</th>
+            <th>Student name</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for res in results %}
+            <tr>
+              <td><a href="/records/{{ res.id }}"><code>{{ res.code }}</code></a></td>
+              <td>{{ res.student_name }}</td>
+              <td>
+                {% if res.status == 'active' %}
+                  <span class="badge badge--ok">Active</span>
+                {% else %}
+                  <span class="badge badge--warn">Anchoring failed</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  <form class="form form--wide" method="post" action="/issue/bulk" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <div class="field">
+      <label for="csv_file">Select CSV file</label>
+      <input id="csv_file" type="file" name="file" accept=".csv,text/csv" required>
+    </div>
+    <div class="btn-row">
+      <button class="btn" type="submit">Validate and issue batch</button>
+      <a class="btn btn--quiet" href="/dashboard">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

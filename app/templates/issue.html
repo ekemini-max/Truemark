@@ -5,7 +5,7 @@
 <div class="wrap page">
   <div class="page-head">
     <div><h1>Issue a record</h1>
-      <p class="measure">Issued by {{ institution }}. Check every detail before you save: an anchored record can be revoked but never edited.</p></div>
+      <p class="measure">Issued by {{ institution }}. Check every detail before you save: an anchored record can be revoked but never edited. Or <a href="/issue/bulk">issue multiple records from a CSV file</a>.</p></div>
   </div>
   <form class="form form--wide" method="post" action="/issue">
     <input type="hidden" name="csrf_token" value="{{ csrf }}">

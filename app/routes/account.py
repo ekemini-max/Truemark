@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import re
+import csv
+import io
 from datetime import date, datetime, timezone
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import Response
 
 from ..auth import AuthError
 from ..deps import (
@@ -140,6 +143,131 @@ def dashboard(request: Request, q: str = "", page: int = 1):
         q=q,
         page=page,
         pages=max((total + PAGE_SIZE - 1) // PAGE_SIZE, 1),
+    )
+
+
+@router.get("/issue/bulk/template")
+def bulk_issue_template(request: Request):
+    require_approved(request)
+    content = "student_name,course,grade,issued_on\nAmara Okafor,Mechanical Engineering,A,2026-06-15\n"
+    return Response(
+        content=content,
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="truemark_bulk_issue_template.csv"'},
+    )
+
+
+@router.get("/issue/bulk")
+def bulk_issue_page(request: Request):
+    user = require_approved(request)
+    return render(request, "bulk_issue.html", errors=[], results=None, institution=user["institution_name"])
+
+
+@router.post("/issue/bulk", dependencies=[Depends(csrf_protect)])
+async def bulk_issue(request: Request, file: UploadFile = File(...)):
+    user = require_approved(request)
+    c = ctx(request)
+    c.limiter.hit(f"issue_bulk:{user['id']}", 10, 600)
+
+    # Read and validate file size (max 200 KB)
+    content_bytes = await file.read(200 * 1024 + 1)
+    if len(content_bytes) > 200 * 1024:
+        return render(
+            request,
+            "bulk_issue.html",
+            status_code=400,
+            errors=[{"row": "-", "error": "File too large (maximum size is 200 KB)."}],
+            results=None,
+            institution=user["institution_name"],
+        )
+
+    # Decode UTF-8 (tolerating BOM if present)
+    try:
+        text = content_bytes.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return render(
+            request,
+            "bulk_issue.html",
+            status_code=400,
+            errors=[{"row": "-", "error": "Invalid file encoding. Please upload a UTF-8 encoded CSV file."}],
+            results=None,
+            institution=user["institution_name"],
+        )
+
+    stream = io.StringIO(text)
+    reader = csv.DictReader(stream)
+
+    expected_headers = {"student_name", "course", "grade", "issued_on"}
+    if not reader.fieldnames or not expected_headers.issubset(set(reader.fieldnames)):
+        return render(
+            request,
+            "bulk_issue.html",
+            status_code=400,
+            errors=[{"row": "-", "error": "CSV file must contain columns: student_name, course, grade, issued_on."}],
+            results=None,
+            institution=user["institution_name"],
+        )
+
+    rows = list(reader)
+    if not rows:
+        return render(
+            request,
+            "bulk_issue.html",
+            status_code=400,
+            errors=[{"row": "-", "error": "CSV file is empty."}],
+            results=None,
+            institution=user["institution_name"],
+        )
+
+    if len(rows) > 200:
+        return render(
+            request,
+            "bulk_issue.html",
+            status_code=400,
+            errors=[{"row": "-", "error": "CSV file contains more than 200 rows."}],
+            results=None,
+            institution=user["institution_name"],
+        )
+
+    # Validation phase
+    row_errors = []
+    cleaned_rows = []
+    for idx, row in enumerate(rows, start=1):
+        try:
+            cleaned = c.service.clean_issue_form(row or {})
+            cleaned_rows.append((idx, cleaned))
+        except ValidationError as exc:
+            row_errors.append({"row": idx, "error": str(exc)})
+
+    if row_errors:
+        return render(
+            request,
+            "bulk_issue.html",
+            status_code=400,
+            errors=row_errors,
+            results=None,
+            institution=user["institution_name"],
+        )
+
+    # Issuing phase (all rows valid)
+    results = []
+    for row_num, cleaned in cleaned_rows:
+        record = c.service.issue(user, cleaned)
+        results.append({
+            "code": record["code"],
+            "id": record["id"],
+            "student_name": record["student_name"],
+            "status": record["status"],
+        })
+
+    c.store.audit_add(user["id"], user["email"], "record.bulk_issue", f"{len(results)} records")
+
+    return render(
+        request,
+        "bulk_issue.html",
+        errors=[],
+        results=results,
+        institution=user["institution_name"],
     )
 
 
