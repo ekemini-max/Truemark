@@ -4,35 +4,45 @@
 {% block content %}
 <div class="wrap page">
   <div class="page-head">
-    <div><h1>Issue a record</h1>
-      <p class="measure">Issued by {{ institution }}. Check every detail before you save: an anchored record can be revoked but never edited. Or <a href="/issue/bulk">issue multiple records from a CSV file</a>.</p></div>
+    <div>
+      <h1>Issue a record</h1>
+      <p class="measure">Issued by {{ institution }}. Check every detail before you save: an anchored record can be revoked but never edited. Or <a href="/issue/bulk">issue multiple records from a CSV file</a>.</p>
+    </div>
   </div>
-  <form class="form form--wide" method="post" action="/issue">
-    <input type="hidden" name="csrf_token" value="{{ csrf }}">
-    {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
-    <div class="field">
-      <label for="student_name">Student's full name</label>
-      <input id="student_name" type="text" name="student_name" value="{{ form.student_name or '' }}" maxlength="120" autocomplete="off" required autofocus>
-    </div>
-    <div class="field">
-      <label for="course">Course or qualification</label>
-      <input id="course" type="text" name="course" value="{{ form.course or '' }}" maxlength="160" autocomplete="off" required>
-    </div>
-    <div class="two">
+
+  <div class="glass card" style="max-width:760px;">
+    <form class="form form--wide" method="post" action="/issue">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      {% if error %}<p class="form-error" role="alert">{{ error }}</p>{% endif %}
+
       <div class="field">
-        <label for="grade">Grade or result</label>
-        <input id="grade" type="text" name="grade" value="{{ form.grade or '' }}" maxlength="40" autocomplete="off" required>
+        <label for="student_name">Student's full name</label>
+        <input id="student_name" type="text" name="student_name" value="{{ form.student_name or '' }}" maxlength="120" autocomplete="off" required autofocus>
       </div>
+
       <div class="field">
-        <label for="issued_on">Issue date</label>
-        <input id="issued_on" type="date" name="issued_on" value="{{ form.issued_on or '' }}" required>
+        <label for="course">Course or qualification</label>
+        <input id="course" type="text" name="course" value="{{ form.course or '' }}" maxlength="160" autocomplete="off" required>
       </div>
-    </div>
-    <p class="hint small muted">Only a fingerprint of these details is written to the {{ 'simulated ledger' if ledger.simulated else ledger.name }}. The name and grade stay in TrueMark's database.</p>
-    <div class="btn-row">
-      <button class="btn" type="submit">Issue and anchor</button>
-      <a class="btn btn--quiet" href="/dashboard">Cancel</a>
-    </div>
-  </form>
+
+      <div class="two">
+        <div class="field">
+          <label for="grade">Grade or result</label>
+          <input id="grade" type="text" name="grade" value="{{ form.grade or '' }}" maxlength="40" autocomplete="off" required>
+        </div>
+        <div class="field">
+          <label for="issued_on">Issue date</label>
+          <input id="issued_on" type="date" name="issued_on" value="{{ form.issued_on or '' }}" required>
+        </div>
+      </div>
+
+      <p class="hint small muted">Only a fingerprint of these details is written to the {{ 'simulated ledger' if ledger.simulated else ledger.name }}. The name and grade stay in TrueMark's database.</p>
+
+      <div class="btn-row">
+        <button class="btn" type="submit">Issue and anchor</button>
+        <a class="btn btn--quiet" href="/dashboard">Cancel</a>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}

@@ -15,10 +15,14 @@
         <button class="btn" type="submit">Verify a record</button>
       </form>
       <p class="or">Have a QR code? Scan it with your phone camera and the result opens here.</p>
+      <div class="btn-row" style="margin-top:24px">
+        <a class="btn btn--quiet" href="/signup">I'm a school</a>
+        <a class="btn btn--quiet" href="/#verify">I'm verifying a certificate</a>
+      </div>
     </div>
 
     <div data-demo>
-      <div class="cert">
+      <div class="cert card--tilt">
         <div class="cert__band" aria-hidden="true"></div>
         <div class="cert__body">
           <p class="cert__school">Greenfield Secondary School</p>
@@ -52,16 +56,28 @@
 
   <section class="section" aria-labelledby="how">
     <h2 id="how">How a record becomes provable</h2>
-    <ol class="sequence">
-      <li><h3>Issue</h3><p>An approved school enters a result or certificate in its workspace.</p></li>
-      <li><h3>Anchor</h3><p>TrueMark computes the record's fingerprint and writes only that fingerprint to a blockchain. Names and grades stay in the database.</p></li>
-      <li><h3>Verify</h3><p>A QR code or record ID opens a public page that recomputes the fingerprint and compares it with the anchored one.</p></li>
-    </ol>
+    <div class="explainer-steps">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h3>Issue</h3>
+        <p class="muted">An approved school enters a result or certificate in its workspace.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h3>Anchor</h3>
+        <p class="muted">TrueMark computes the record's fingerprint and writes only that fingerprint to a blockchain. Names and grades stay in the database.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h3>Verify</h3>
+        <p class="muted">A QR code or record ID opens a public page that recomputes the fingerprint and compares it with the anchored one.</p>
+      </div>
+    </div>
   </section>
 
   <section class="section" aria-labelledby="limits">
     <h2 id="limits">What the proof says, and what it doesn't</h2>
-    <div class="proves">
+    <div class="proves card">
       <div>
         <h3>It shows</h3>
         <ul>
@@ -95,7 +111,7 @@
 
   <section class="section" aria-labelledby="schools">
     <h2 id="schools">Issuing records for your school</h2>
-    <p class="measure muted">Register your institution, wait for a TrueMark admin to approve it, then issue records one at a time and print certificates with a QR code.</p>
+    <p class="measure muted">Register your institution, wait for a TrueMark admin to approve it, then issue records one at a time or in bulk and print certificates with a QR code.</p>
     <div class="btn-row">
       <a class="btn" href="/signup">Register a school</a>
       <a class="btn btn--quiet" href="/login">Sign in</a>
